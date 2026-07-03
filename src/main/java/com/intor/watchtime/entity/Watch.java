@@ -1,6 +1,8 @@
 package com.intor.watchtime.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -46,6 +48,8 @@ public class Watch {
 
     private String watchedOnPlatform;
 
+    @Min(1)
+    @Max(10)
     private Integer rating;
 
     @Column(updatable = false)
