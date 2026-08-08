@@ -132,14 +132,6 @@ public interface WatchRepository extends JpaRepository<Watch, UUID> {
                                                                    @Param("seasonNumber") Integer seasonNumber);
     boolean existsByMedia_Id(UUID mediaId);
 
-    @Query("""
-      SELECT COUNT(w) > 0 FROM Watch w
-      WHERE w.media.id = :mediaId
-        AND w.episode.seasonNumber = :seasonNumber
-        AND w.episode.episodeNumber = :episodeNumber
-    """)
-    boolean existsForEpisode(UUID mediaId, int episodeNumber, int seasonNumber);
-
     @Query("SELECT MAX(w.watchedAt) FROM Watch w WHERE w.media.id = :mediaId")
     Optional<Instant> findMovieLatestWatch(@Param("mediaId") UUID mediaId);
 

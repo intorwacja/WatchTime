@@ -26,7 +26,7 @@ public class TMDBClientConfig {
                     request.getHeaders().setBearerAuth(apiKey);
                     return execution.execute(request, body);
                 })
-                .defaultStatusHandler(HttpStatusCode::isError, (req, res) -> {
+                .defaultStatusHandler(HttpStatusCode::isError, (_, res) -> {
                     throw new ExternalMediaException("TMDB error: " + res.getStatusCode());
                 })
                 .build();
