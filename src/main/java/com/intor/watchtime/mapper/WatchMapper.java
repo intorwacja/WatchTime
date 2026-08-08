@@ -2,23 +2,18 @@ package com.intor.watchtime.mapper;
 
 import com.intor.watchtime.dto.request.WatchRequest;
 import com.intor.watchtime.dto.response.WatchResponse;
+import com.intor.watchtime.entity.Episode;
+import com.intor.watchtime.entity.Media;
 import com.intor.watchtime.entity.Watch;
 import org.springframework.stereotype.Component;
 
 @Component
 public class WatchMapper {
 
-    public Watch toEntity(WatchRequest request) {
+    public Watch toEntity(WatchRequest request, Media media, Episode episode) {
         return Watch.builder()
-                .title(request.title())
-                .externalShowId(request.externalShowId())
-                .externalEpisodeId(request.externalEpisodeId())
-                .seasonNumber(request.seasonNumber())
-                .episodeNumber(request.episodeNumber())
-                .isMovie(request.isMovie())
-                .isSpecial(request.isSpecial())
-                .runtimeSeconds(request.runtimeSeconds())
-                .rewatchCount(request.rewatchCount() != null ? request.rewatchCount() : 0)
+                .media(media)
+                .episode(episode)
                 .watchedAt(request.watchedAt())
                 .markedViaSource(request.markedViaSource())
                 .watchedOnPlatform(request.watchedOnPlatform())
@@ -27,17 +22,14 @@ public class WatchMapper {
     }
 
     public WatchResponse toResponse(Watch watch) {
+        Episode episode = watch.getEpisode();
         return new WatchResponse(
                 watch.getId(),
-                watch.getTitle(),
-                watch.getExternalShowId(),
-                watch.getExternalEpisodeId(),
-                watch.getSeasonNumber(),
-                watch.getEpisodeNumber(),
-                watch.getIsMovie(),
-                watch.getIsSpecial(),
-                watch.getRuntimeSeconds(),
-                watch.getRewatchCount(),
+                watch.getMedia().getId(),
+                watch.getMedia().getExternalShowId(),
+                episode != null ? episode.getSeasonNumber() : null,
+                episode != null ? episode.getEpisodeNumber() : null,
+                watch.getMedia().isMovie(),
                 watch.getWatchedAt(),
                 watch.getMarkedViaSource(),
                 watch.getWatchedOnPlatform(),
@@ -45,4 +37,5 @@ public class WatchMapper {
                 watch.getCreatedAt()
         );
     }
+
 }

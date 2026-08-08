@@ -1,15 +1,21 @@
 package com.intor.watchtime.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "watches")
+@Table(name = "watches",
+    indexes = {
+            @Index(name = "idx_watches_media_id", columnList = "media_id"),
+            @Index(name = "idx_watches_episode_id", columnList = "episode_id"),
+            @Index(name = "idx_watches_media_watched_at", columnList = "media_id, watched_at DESC"),
+            @Index(name = "idx_watches_episode_watched_at", columnList = "episode_id, watched_at DESC")
+    })
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,50 +27,39 @@ public class Watch {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
-    private String title;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "media_id", nullable = false)
+    private Media media;
 
-    private Long externalShowId;
-    private Long externalEpisodeId;
-
-    private Integer seasonNumber;
-    private Integer episodeNumber;
-
-    @Builder.Default
-    private Boolean isMovie = false;
-
-    @Builder.Default
-    private Boolean isSpecial = false;
-
-    private Integer runtimeSeconds;
-
-    @Builder.Default
-    private Integer rewatchCount = 0;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "episode_id")
+    private Episode episode;
 
     @Column(nullable = false)
-    private LocalDateTime watchedAt;
+    private Instant watchedAt;
 
     private String markedViaSource;
 
     private String watchedOnPlatform;
 
-    @Min(1)
-    @Max(10)
-    private Integer rating;
+    @DecimalMin("0.0")
+    @DecimalMax("10.0")
+    private Double rating;
 
     @Column(updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 
     @PrePersist
     private void prePersist() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        createdAt = Instant.now();
+        updatedAt = Instant.now();
+        watchedAt = Instant.now();
     }
 
     @PreUpdate
     private void preUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = Instant.now();
     }
 }

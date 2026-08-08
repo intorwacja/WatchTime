@@ -1,24 +1,18 @@
 package com.intor.watchtime.dto.request;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record WatchRequest(
-        @NotBlank String title,
-        Long externalShowId,
-        Long externalEpisodeId,
+        @NotNull Long externalMediaId,
         Integer seasonNumber,
         Integer episodeNumber,
-        Boolean isMovie,
-        Boolean isSpecial,
-        Integer runtimeSeconds,
-        Integer rewatchCount,
-        @NotNull LocalDateTime watchedAt,
+        @NotNull Boolean isMovie,
+        Instant watchedAt,
         String markedViaSource,
         String watchedOnPlatform,
-        @Min(1) @Max(10) Integer rating
+        @DecimalMin("0.0") @DecimalMax("10.0") Double rating
 ) {}

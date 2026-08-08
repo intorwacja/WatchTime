@@ -1,22 +1,18 @@
 package com.intor.watchtime.dto.response;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 public record WatchResponse(
         UUID id,
-        String title,
-        Long externalShowId,
-        Long externalEpisodeId,
+        UUID mediaId,
+        Long externalMediaId,
         Integer seasonNumber,
         Integer episodeNumber,
-        Boolean isMovie,
-        Boolean isSpecial,
-        Integer runtimeSeconds,
-        Integer rewatchCount,
-        LocalDateTime watchedAt,
+        boolean isMovie,
+        Instant watchedAt,
         String markedViaSource,
         String watchedOnPlatform,
-        Integer rating,
-        LocalDateTime createdAt
+        Double rating,
+        Instant createdAt
 ) {}
