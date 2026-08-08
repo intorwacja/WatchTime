@@ -6,6 +6,7 @@ public record MovieDetailsResponse(
         String title,
         String overview,
         double voteAverage,
+        Integer runtime,
         int voteCount,
         String releaseDate,
         String posterPath,

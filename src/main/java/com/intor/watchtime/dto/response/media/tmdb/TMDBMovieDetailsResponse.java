@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public record TMDBMovieDetailsResponse(
         String title,
         String overview,
+        Integer runtime,
         @JsonProperty("vote_average") double voteAverage,
         @JsonProperty("vote_count") int voteCount,
         @JsonProperty("release_date") String releaseDate,

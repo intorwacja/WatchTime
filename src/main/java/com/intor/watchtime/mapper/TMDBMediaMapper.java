@@ -60,6 +60,7 @@ public class TMDBMediaMapper {
                 details.overview(),
                 details.voteAverage(),
                 details.voteCount(),
+                details.runtime(),
                 details.releaseDate(),
                 details.posterPath(),
                 details.backdropPath(),

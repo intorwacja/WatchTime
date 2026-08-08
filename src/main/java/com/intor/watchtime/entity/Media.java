@@ -38,6 +38,8 @@ public class Media {
 
     private Integer numberOfEpisodes;
 
+    private Integer runtimeMinutes;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Provider provider;

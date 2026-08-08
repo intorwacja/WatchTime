@@ -16,6 +16,7 @@ public class MediaMapper {
                 .externalShowId(externalShowId)
                 .provider(provider)
                 .title(details.title())
+                .runtimeMinutes(details.runtime())
                 .isMovie(true)
                 .posterPath(details.posterPath())
                 .backdropPath(details.backdropPath())
