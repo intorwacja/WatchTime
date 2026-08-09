@@ -54,7 +54,7 @@ public interface WatchRepository extends JpaRepository<Watch, UUID> {
     @Query("DELETE FROM Watch w WHERE w.media.id = :mediaId")
     long deleteAllByMedia_Id(UUID mediaId);
 
-    @Query("""
+    @Query(value = """
             SELECT new com.intor.watchtime.dto.response.WatchedViewResponse(
                 m.id,
                 m.externalShowId,
@@ -69,6 +69,10 @@ public interface WatchRepository extends JpaRepository<Watch, UUID> {
             FROM Watch w JOIN w.media m
             GROUP BY m.id, m.title, m.posterPath, m.isMovie, m.numberOfEpisodes
             ORDER BY MAX(w.watchedAt) DESC
+            """,
+            countQuery = """
+            SELECT COUNT(DISTINCT w.media.id)
+            FROM Watch w
             """)
     Page<WatchedViewResponse> findWatchedLibrary(Pageable pageable);
 
@@ -97,7 +101,7 @@ public interface WatchRepository extends JpaRepository<Watch, UUID> {
         AND m.externalShowId = :externalMediaId
       GROUP BY m.id
   """)
-    Optional<SeriesWatchInfo> findSeriesWatchInfo(long externalMediaId, Provider provider);
+    Optional<SeriesWatchInfo> findSeriesWatchInfo(@Param("externalMediaId") long externalMediaId, @Param("provider") Provider provider);
 
     @Query("""
       SELECT new com.intor.watchtime.repository.projection.SeasonWatchInfoProjection(

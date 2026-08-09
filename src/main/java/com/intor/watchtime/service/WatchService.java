@@ -30,7 +30,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -65,20 +68,31 @@ public class WatchService {
                 .orElseGet(() -> createMedia(request.externalMediaId(), false));
         SeasonDetailsResponse season = externalMediaService.getSeasonDetails(
                 media.getExternalShowId(), request.seasonNumber());
-        return season.episodes().stream()
-                .map(episodeData -> {
-                    Episode episode = episodeRepository
-                            .findByMediaAndSeasonNumberAndEpisodeNumber(media, request.seasonNumber(), episodeData.episodeNumber())
-                            .orElseGet(() -> episodeRepository.save(mediaMapper.toEpisodeEntity(episodeData, media)));
-                    Watch watch = Watch.builder()
-                            .media(media)
-                            .episode(episode)
-                            .watchedAt(request.watchedAt())
-                            .markedViaSource(request.markedViaSource())
-                            .watchedOnPlatform(request.watchedOnPlatform())
-                            .build();
-                    return watchMapper.toResponse(watchRepository.save(watch));
-                })
+
+        Map<Integer, Episode> existingByNumber = episodeRepository
+                .findAllByMediaAndSeasonNumber(media, request.seasonNumber())
+                .stream()
+                .collect(Collectors.toMap(Episode::getEpisodeNumber, Function.identity()));
+
+        List<Episode> toCreate = season.episodes().stream()
+                .filter(e -> !existingByNumber.containsKey(e.episodeNumber()))
+                .map(e -> mediaMapper.toEpisodeEntity(e, media))
+                .toList();
+        episodeRepository.saveAll(toCreate)
+                .forEach(e -> existingByNumber.put(e.getEpisodeNumber(), e));
+
+        List<Watch> watches = season.episodes().stream()
+                .map(e -> Watch.builder()
+                        .media(media)
+                        .episode(existingByNumber.get(e.episodeNumber()))
+                        .watchedAt(request.watchedAt())
+                        .markedViaSource(request.markedViaSource())
+                        .watchedOnPlatform(request.watchedOnPlatform())
+                        .build())
+                .toList();
+
+        return watchRepository.saveAll(watches).stream()
+                .map(watchMapper::toResponse)
                 .toList();
     }
 
@@ -138,7 +152,9 @@ public class WatchService {
         watch.setEpisode(request.isMovie()
                 ? null
                 : resolveOrCreateEpisode(watch.getMedia(), request.seasonNumber(), request.episodeNumber()));
-        watch.setWatchedAt(request.watchedAt());
+        if (request.watchedAt() != null) {
+            watch.setWatchedAt(request.watchedAt());
+        }
         watch.setMarkedViaSource(request.markedViaSource());
         watch.setWatchedOnPlatform(request.watchedOnPlatform());
         watch.setRating(request.rating());
@@ -147,15 +163,13 @@ public class WatchService {
 
     @Transactional
     public void deleteAllByMediaId(UUID mediaId) {
-        if (!watchRepository.existsByMedia_Id(mediaId)) {
-            throw new ResourceNotFoundException("Watch", mediaId);
-        }
         long count = watchRepository.deleteAllByMedia_Id(mediaId);
-
         if (count == 0) {
-            throw new ResourceNotFoundException("Media with id " + mediaId + "did not contain any watches");
+            if (!mediaRepository.existsById(mediaId)) {
+                throw new ResourceNotFoundException("Media", mediaId);
+            }
+            throw new ResourceNotFoundException("Watch for media", mediaId);
         }
-
         log.debug("Deleted {} watches from media {}", count, mediaId);
     }
 
@@ -164,7 +178,7 @@ public class WatchService {
         long count = watchRepository.deleteLastByMediaId(mediaId);
 
         if (count == 0) {
-            throw new ResourceNotFoundException("Media with id " + mediaId + "did not contain any watches");
+            throw new ResourceNotFoundException("Media with id " + mediaId + " did not contain any watches");
         }
 
         return watchRepository.findMovieLatestWatch(mediaId).orElse(null);

@@ -1,11 +1,11 @@
 package com.intor.watchtime.controller;
 
-import com.intor.watchtime.config.TMDBClient;
 import com.intor.watchtime.dto.response.media.SeasonDetailsResponse;
 import com.intor.watchtime.dto.response.media.MediaPageResponse;
 import com.intor.watchtime.dto.response.media.MovieDetailsResponse;
 import com.intor.watchtime.dto.response.media.SeriesDetailsResponse;
 import com.intor.watchtime.service.ExternalMediaService;
+import com.intor.watchtime.service.TimeWindow;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,7 +33,7 @@ public class MediaController {
 
     @GetMapping("/trending")
     public MediaPageResponse getTrendingAll(
-            @RequestParam(defaultValue = "week") TMDBClient.TimeWindow timeWindow,
+            @RequestParam(defaultValue = "WEEK") TimeWindow timeWindow,
             @RequestParam(defaultValue = "1") int page) {
         return externalMediaService.getTrendingAll(timeWindow, page);
     }

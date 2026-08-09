@@ -32,10 +32,17 @@ class TMDBExternalMediaService implements ExternalMediaService {
     private final WatchStatsService watchStatsService;
 
     @Override
-    public MediaPageResponse getTrendingAll(TMDBClient.TimeWindow timeWindow, int page) {
-        TMDBPage<TMDBResponse> tmdbPage = tmdbClient.getTrendingAll(timeWindow, page);
+    public MediaPageResponse getTrendingAll(TimeWindow timeWindow, int page) {
+        TMDBPage<TMDBResponse> tmdbPage = tmdbClient.getTrendingAll(toTmdb(timeWindow), page);
         Set<Long> watchedMediaIds = getWatchedMediaIds(tmdbPage);
         return tmdbMediaMapper.toMediaPageResponse(tmdbPage, watchedMediaIds);
+    }
+
+    private TMDBClient.TimeWindow toTmdb(TimeWindow timeWindow) {
+        return switch (timeWindow) {
+            case DAY -> TMDBClient.TimeWindow.day;
+            case WEEK -> TMDBClient.TimeWindow.week;
+        };
     }
 
     @Override

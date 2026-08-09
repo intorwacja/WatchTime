@@ -10,7 +10,7 @@ import java.util.UUID;
 @Table(name = "media",
     uniqueConstraints = @UniqueConstraint(
             name = "uq_media_provider_external_id",
-            columnNames = {"externalShowId", "provider"})
+            columnNames = {"external_show_id", "provider"})
 )
 @Getter
 @Setter

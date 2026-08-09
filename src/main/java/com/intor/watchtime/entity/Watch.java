@@ -55,7 +55,9 @@ public class Watch {
     private void prePersist() {
         createdAt = Instant.now();
         updatedAt = Instant.now();
-        watchedAt = Instant.now();
+        if (watchedAt == null) {
+            watchedAt = Instant.now();
+        }
     }
 
     @PreUpdate
