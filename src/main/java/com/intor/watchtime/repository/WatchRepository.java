@@ -134,7 +134,6 @@ public interface WatchRepository extends JpaRepository<Watch, UUID> {
     List<EpisodeWatchInfoProjection> findEpisodeWatchInfosInSeason(@Param("externalMediaId") Long externalMediaId,
                                                                    @Param("provider") Provider provider,
                                                                    @Param("seasonNumber") Integer seasonNumber);
-    boolean existsByMedia_Id(UUID mediaId);
 
     @Query("SELECT MAX(w.watchedAt) FROM Watch w WHERE w.media.id = :mediaId")
     Optional<Instant> findMovieLatestWatch(@Param("mediaId") UUID mediaId);

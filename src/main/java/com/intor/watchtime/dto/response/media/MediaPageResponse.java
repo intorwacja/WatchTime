@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 /**
- * Public paginated response returned by our own API to frontend clients.
+ * Public paginated response returned by API to frontend clients.
  * <p>
  * The service layer is responsible for mapping external media providers into this type.
  */
