@@ -12,29 +12,41 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class WatchStatsService {
     private final WatchRepository watchRepository;
+    private final CurrentUserService currentUserService;
 
     public MovieWatchInfo getMovieWatchStats(Long externalMediaId, Provider provider) {
-        return watchRepository.findMovieWatchInfo(externalMediaId, provider).orElse(null);
+        return watchRepository.findMovieWatchInfo(externalMediaId, provider, currentUserId()).orElse(null);
     }
 
     public SeriesWatchInfo getSeriesWatchStats(Long externalMediaId, Provider provider) {
-        return watchRepository.findSeriesWatchInfo(externalMediaId, provider).orElse(null);
+        return watchRepository.findSeriesWatchInfo(externalMediaId, provider, currentUserId()).orElse(null);
     }
 
     public Map<Integer, SeasonWatchInfo> getSeasonsWatchStats(Long externalMediaId, Provider provider) {
-        return watchRepository.findSeasonWatchInfos(externalMediaId, provider).stream()
+        return watchRepository.findSeasonWatchInfos(externalMediaId, provider, currentUserId()).stream()
                 .collect(Collectors.toMap(SeasonWatchInfoProjection::seasonNumber,
                         info -> new SeasonWatchInfo(info.watchedEpisodesCount())));
     }
+
     public Map<Integer, EpisodeWatchInfo> getEpisodesWatchInfoInSeason(Long externalMediaId, Provider provider, int seasonNumber) {
-        return watchRepository.findEpisodeWatchInfosInSeason(externalMediaId, provider, seasonNumber).stream()
+        return watchRepository.findEpisodeWatchInfosInSeason(externalMediaId, provider, seasonNumber, currentUserId()).stream()
                 .collect(Collectors.toMap(EpisodeWatchInfoProjection::episodeNumber,
                         info -> new EpisodeWatchInfo(info.id(), info.watchedAt(), info.watchCount())));
+    }
+
+    public Set<Long> getWatchedExternalIds(Set<Long> externalIds, Provider provider) {
+        return watchRepository.findWatchedExternalIds(externalIds, provider, currentUserId());
+    }
+
+    private UUID currentUserId() {
+        return currentUserService.get().getId();
     }
 }

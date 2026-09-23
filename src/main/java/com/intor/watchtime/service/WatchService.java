@@ -11,6 +11,7 @@ import com.intor.watchtime.dto.response.media.SeriesDetailsResponse;
 import com.intor.watchtime.entity.Episode;
 import com.intor.watchtime.entity.Media;
 import com.intor.watchtime.entity.Provider;
+import com.intor.watchtime.entity.User;
 import com.intor.watchtime.entity.Watch;
 import com.intor.watchtime.exception.ExternalMediaException;
 import com.intor.watchtime.exception.ResourceNotFoundException;
@@ -45,6 +46,7 @@ public class WatchService {
     private final MediaRepository mediaRepository;
     private final EpisodeRepository episodeRepository;
     private final ExternalMediaService externalMediaService;
+    private final CurrentUserService currentUserService;
     private final WatchMapper watchMapper;
     private final MediaMapper mediaMapper;
 
@@ -53,17 +55,19 @@ public class WatchService {
 
     @Transactional
     public WatchResponse create(WatchRequest request) {
+        User user = currentUserService.get();
         Media media = mediaRepository.findByExternalShowIdAndProvider(request.externalMediaId(), provider)
                 .orElseGet(() -> createMedia(request.externalMediaId(), request.isMovie()));
         Episode episode = request.isMovie()
                 ? null
                 : resolveOrCreateEpisode(media, request.seasonNumber(), request.episodeNumber());
-        Watch watch = watchMapper.toEntity(request, media, episode);
+        Watch watch = watchMapper.toEntity(request, user, media, episode);
         return watchMapper.toResponse(watchRepository.save(watch));
     }
 
     @Transactional
     public List<WatchResponse> createForSeason(WatchSeasonRequest request) {
+        User user = currentUserService.get();
         Media media = mediaRepository.findByExternalShowIdAndProvider(request.externalMediaId(), provider)
                 .orElseGet(() -> createMedia(request.externalMediaId(), false));
         SeasonDetailsResponse season = externalMediaService.getSeasonDetails(
@@ -83,6 +87,7 @@ public class WatchService {
 
         List<Watch> watches = season.episodes().stream()
                 .map(e -> Watch.builder()
+                        .user(user)
                         .media(media)
                         .episode(existingByNumber.get(e.episodeNumber()))
                         .watchedAt(request.watchedAt())
@@ -124,14 +129,15 @@ public class WatchService {
     }
 
     public WatchResponse getById(UUID id) {
-        Watch watch = watchRepository.findById(id)
+        Watch watch = watchRepository.findByIdAndUserId(id, currentUserService.get().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Watch", id));
         return watchMapper.toResponse(watch);
     }
 
     public WatchedViewPageResponse getWatchedList(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<WatchedViewResponse> libraryPage = watchRepository.findWatchedLibrary(pageable);
+        Page<WatchedViewResponse> libraryPage =
+                watchRepository.findWatchedLibrary(currentUserService.get().getId(), pageable);
         return new WatchedViewPageResponse(
                 libraryPage.getNumber(),
                 libraryPage.getContent(),
@@ -142,7 +148,7 @@ public class WatchService {
 
     @Transactional
     public WatchResponse update(UUID id, WatchRequest request) {
-        Watch watch = watchRepository.findById(id)
+        Watch watch = watchRepository.findByIdAndUserId(id, currentUserService.get().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Watch", id));
         if (watch.getMedia().getExternalShowId() != request.externalMediaId()) {
             Media media = mediaRepository.findByExternalShowIdAndProvider(request.externalMediaId(), provider)
@@ -163,7 +169,7 @@ public class WatchService {
 
     @Transactional
     public void deleteAllByMediaId(UUID mediaId) {
-        long count = watchRepository.deleteAllByMedia_Id(mediaId);
+        long count = watchRepository.deleteAllByMediaIdAndUserId(mediaId, currentUserService.get().getId());
         if (count == 0) {
             if (!mediaRepository.existsById(mediaId)) {
                 throw new ResourceNotFoundException("Media", mediaId);
@@ -175,23 +181,25 @@ public class WatchService {
 
     @Transactional
     public Instant deleteLastWatchByMediaId(UUID mediaId) {
-        long count = watchRepository.deleteLastByMediaId(mediaId);
+        UUID userId = currentUserService.get().getId();
+        long count = watchRepository.deleteLastByMediaId(mediaId, userId);
 
         if (count == 0) {
             throw new ResourceNotFoundException("Media with id " + mediaId + " did not contain any watches");
         }
 
-        return watchRepository.findMovieLatestWatch(mediaId).orElse(null);
+        return watchRepository.findMovieLatestWatch(mediaId, userId).orElse(null);
     }
 
     @Transactional
     public Instant deleteLastEpisodeWatch(UUID mediaId, int seasonNumber, int episodeNumber) {
-        long count = watchRepository.deleteLastEpisodeWatch(mediaId, seasonNumber, episodeNumber);
+        UUID userId = currentUserService.get().getId();
+        long count = watchRepository.deleteLastEpisodeWatch(mediaId, userId, seasonNumber, episodeNumber);
 
         if (count == 0) {
             throw new ResourceNotFoundException("Media with id " + mediaId + " and episode S" + seasonNumber + "E" + episodeNumber + " did not contain any watches");
         }
 
-        return watchRepository.findEpisodeLatestWatch(mediaId, seasonNumber, episodeNumber).orElse(null);
+        return watchRepository.findEpisodeLatestWatch(mediaId, seasonNumber, episodeNumber, userId).orElse(null);
     }
 }

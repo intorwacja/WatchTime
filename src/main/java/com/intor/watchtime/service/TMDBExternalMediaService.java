@@ -9,7 +9,6 @@ import com.intor.watchtime.dto.response.media.tmdb.TMDBResponse;
 import com.intor.watchtime.dto.response.media.MovieWatchInfo;
 import com.intor.watchtime.entity.Provider;
 import com.intor.watchtime.mapper.TMDBMediaMapper;
-import com.intor.watchtime.repository.MediaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -28,7 +27,6 @@ class TMDBExternalMediaService implements ExternalMediaService {
 
     private final TMDBClient tmdbClient;
     private final TMDBMediaMapper tmdbMediaMapper;
-    private final MediaRepository mediaRepository;
     private final WatchStatsService watchStatsService;
 
     @Override
@@ -72,7 +70,7 @@ class TMDBExternalMediaService implements ExternalMediaService {
     }
 
     private Set<Long> getWatchedMediaIds(TMDBPage<TMDBResponse> tmdbPage) {
-        return mediaRepository.findWatchedExternalIds(
+        return watchStatsService.getWatchedExternalIds(
                 tmdbPage.results().stream().filter(Objects::nonNull).map(TMDBResponse::getId).collect(Collectors.toSet()), provider
         );
     }
