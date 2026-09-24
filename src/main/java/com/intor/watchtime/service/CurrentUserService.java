@@ -10,23 +10,30 @@ import org.springframework.security.oauth2.core.oidc.IdTokenClaimNames;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class CurrentUserService {
 
     private final UserRepository userRepository;
 
-    public User get() {
+    public Optional<User> find() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !(authentication.getPrincipal() instanceof OidcUser oidcUser)) {
-            throw new AuthenticationCredentialsNotFoundException("No authenticated user in security context");
+            return Optional.empty();
         }
 
         String issuer = oidcUser.getClaimAsString(IdTokenClaimNames.ISS);
 
-        return userRepository.findByIssuerAndSubject(issuer, oidcUser.getSubject())
+        return Optional.of(userRepository.findByIssuerAndSubject(issuer, oidcUser.getSubject())
                 .orElseThrow(() -> new IllegalStateException(
-                        "Authenticated identity has no provisioned user: " + issuer + " / " + oidcUser.getSubject()));
+                        "Authenticated identity has no provisioned user: " + issuer + " / " + oidcUser.getSubject())));
+    }
+
+    public User get() {
+        return find().orElseThrow(
+                () -> new AuthenticationCredentialsNotFoundException("No authenticated user in security context"));
     }
 }
