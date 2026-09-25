@@ -1,12 +1,10 @@
 package com.intor.watchtime.service;
 
 import com.intor.watchtime.config.TMDBClient;
-import com.intor.watchtime.dto.response.media.SeriesWatchInfo;
 import com.intor.watchtime.dto.response.media.*;
 import com.intor.watchtime.dto.response.media.tmdb.TMDBMovieDetailsResponse;
 import com.intor.watchtime.dto.response.media.tmdb.TMDBPage;
 import com.intor.watchtime.dto.response.media.tmdb.TMDBResponse;
-import com.intor.watchtime.dto.response.media.MovieWatchInfo;
 import com.intor.watchtime.entity.Provider;
 import com.intor.watchtime.mapper.TMDBMediaMapper;
 import lombok.RequiredArgsConstructor;
