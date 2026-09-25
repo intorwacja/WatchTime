@@ -4,14 +4,16 @@ import com.intor.watchtime.dto.request.WatchRequest;
 import com.intor.watchtime.dto.response.WatchResponse;
 import com.intor.watchtime.entity.Episode;
 import com.intor.watchtime.entity.Media;
+import com.intor.watchtime.entity.User;
 import com.intor.watchtime.entity.Watch;
 import org.springframework.stereotype.Component;
 
 @Component
 public class WatchMapper {
 
-    public Watch toEntity(WatchRequest request, Media media, Episode episode) {
+    public Watch toEntity(WatchRequest request, User user, Media media, Episode episode) {
         return Watch.builder()
+                .user(user)
                 .media(media)
                 .episode(episode)
                 .watchedAt(request.watchedAt())

@@ -11,10 +11,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "watches",
     indexes = {
-            @Index(name = "idx_watches_media_id", columnList = "media_id"),
-            @Index(name = "idx_watches_episode_id", columnList = "episode_id"),
-            @Index(name = "idx_watches_media_watched_at", columnList = "media_id, watched_at DESC"),
-            @Index(name = "idx_watches_episode_watched_at", columnList = "episode_id, watched_at DESC")
+            @Index(name = "idx_watches_user_media_watched_at", columnList = "user_id, media_id, watched_at DESC"),
+            @Index(name = "idx_watches_user_episode_watched_at", columnList = "user_id, episode_id, watched_at DESC")
     })
 @Getter
 @Setter
@@ -26,6 +24,10 @@ public class Watch {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "media_id", nullable = false)

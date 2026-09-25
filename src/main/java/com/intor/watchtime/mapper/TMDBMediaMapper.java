@@ -1,7 +1,5 @@
 package com.intor.watchtime.mapper;
 
-import com.intor.watchtime.dto.response.media.SeriesWatchInfo;
-import com.intor.watchtime.dto.response.media.MovieWatchInfo;
 import com.intor.watchtime.dto.response.media.*;
 import com.intor.watchtime.dto.response.media.tmdb.*;
 import org.springframework.stereotype.Component;
