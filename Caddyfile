@@ -1,0 +1,23 @@
+{
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+:80 {
+	handle /api/* {
+		reverse_proxy backend:8080
+	}
+
+	handle /oauth2/* {
+		reverse_proxy backend:8080
+	}
+
+	handle /login/oauth2/* {
+		reverse_proxy backend:8080
+	}
+
+	handle {
+		reverse_proxy frontend:80
+	}
+}
