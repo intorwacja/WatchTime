@@ -1,0 +1,46 @@
+services:
+  backend:
+    image: ghcr.io/intorwacja/watchtime-backend:${BACKEND_TAG}
+    container_name: watchtime-backend
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: postgres
+      REDIS_HOST: redis
+    mem_limit: 768m
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/intorwacja/watchtime-frontend:${FRONTEND_TAG}
+    container_name: watchtime-frontend
+    restart: unless-stopped
+
+  web:
+    image: caddy:2
+    container_name: watchtime-caddy
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+      - frontend
+    restart: unless-stopped
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: watchtime-cloudflared
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - web
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
