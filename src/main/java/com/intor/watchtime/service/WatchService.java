@@ -14,6 +14,7 @@ import com.intor.watchtime.entity.Provider;
 import com.intor.watchtime.entity.User;
 import com.intor.watchtime.entity.Watch;
 import com.intor.watchtime.exception.ExternalMediaException;
+import com.intor.watchtime.exception.InvalidRequestException;
 import com.intor.watchtime.exception.ResourceNotFoundException;
 import com.intor.watchtime.mapper.MediaMapper;
 import com.intor.watchtime.mapper.WatchMapper;
@@ -112,7 +113,7 @@ public class WatchService {
 
     private Episode resolveOrCreateEpisode(Media media, Integer seasonNumber, Integer episodeNumber) {
         if (seasonNumber == null || episodeNumber == null) {
-            throw new IllegalArgumentException("seasonNumber and episodeNumber are required for series");
+            throw new InvalidRequestException("seasonNumber and episodeNumber are required for series");
         }
         return episodeRepository.findByMediaAndSeasonNumberAndEpisodeNumber(media, seasonNumber, episodeNumber)
                 .orElseGet(() -> createEpisode(media, seasonNumber, episodeNumber));
