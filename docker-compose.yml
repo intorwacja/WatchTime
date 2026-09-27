@@ -2,8 +2,6 @@ services:
   postgres:
     image: postgres:17
     container_name: watchtime-postgres
-    env_file:
-      - .env
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
@@ -15,6 +13,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
 
   redis:
@@ -40,6 +40,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
 
 volumes:
