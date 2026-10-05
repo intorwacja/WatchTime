@@ -85,7 +85,7 @@ public class WatchService {
                 .stream()
                 .collect(Collectors.toMap(Episode::getEpisodeNumber, Function.identity()));
 
-        verifySeasonWatchLimitNotReached(user, existingByNumber.values());
+        Set<UUID> alreadyWatched = findAlreadyWatched(user, existingByNumber.values());
 
         List<Episode> toCreate = season.episodes().stream()
                 .filter(e -> !existingByNumber.containsKey(e.episodeNumber()))
@@ -95,10 +95,12 @@ public class WatchService {
                 .forEach(e -> existingByNumber.put(e.getEpisodeNumber(), e));
 
         List<Watch> watches = season.episodes().stream()
-                .map(e -> Watch.builder()
+                .map(e -> existingByNumber.get(e.episodeNumber()))
+                .filter(episode -> !alreadyWatched.contains(episode.getId()))
+                .map(episode -> Watch.builder()
                         .user(user)
                         .media(media)
-                        .episode(existingByNumber.get(e.episodeNumber()))
+                        .episode(episode)
                         .watchedAt(request.watchedAt())
                         .markedViaSource(request.markedViaSource())
                         .watchedOnPlatform(request.watchedOnPlatform())
@@ -213,19 +215,13 @@ public class WatchService {
     }
 
 
-    private void verifySeasonWatchLimitNotReached(User user, Collection<Episode> episodes) {
+    private Set<UUID> findAlreadyWatched(User user, Collection<Episode> episodes) {
         if (episodes.isEmpty()) {
-            return;
+            return Set.of();
         }
 
         Set<UUID> episodeIds = episodes.stream().map(Episode::getId).collect(Collectors.toSet());
-        Set<UUID> atLimit = watchRepository.findEpisodeIdsAtWatchLimit(episodeIds, user.getId(), MAX_WATCHES_PER_ITEM);
-
-        if (!atLimit.isEmpty()) {
-            throw new WatchLimitExceededException(
-                    "%d episode(s) of this season already have %d watches, which is the maximum"
-                            .formatted(atLimit.size(), MAX_WATCHES_PER_ITEM));
-        }
+        return watchRepository.findWatchedEpisodeIds(episodeIds, user.getId());
     }
 
     private void verifyWatchLimitNotReached(User user, Media media, Episode episode) {
