@@ -26,6 +26,21 @@ public interface WatchRepository extends JpaRepository<Watch, UUID> {
 
     Optional<Watch> findByIdAndUserId(UUID id, UUID userId);
 
+    long countByUserIdAndMediaIdAndEpisodeIsNull(UUID userId, UUID mediaId);
+
+    long countByUserIdAndEpisodeId(UUID userId, UUID episodeId);
+
+    @Query("""
+      SELECT w.episode.id FROM Watch w
+      WHERE w.user.id = :userId
+        AND w.episode.id IN :episodeIds
+      GROUP BY w.episode.id
+      HAVING COUNT(w) >= :limit
+  """)
+    Set<UUID> findEpisodeIdsAtWatchLimit(@Param("episodeIds") Set<UUID> episodeIds,
+                                         @Param("userId") UUID userId,
+                                         @Param("limit") long limit);
+
     @Query("""
       SELECT DISTINCT m.externalShowId FROM Watch w JOIN w.media m
       WHERE m.provider = :provider

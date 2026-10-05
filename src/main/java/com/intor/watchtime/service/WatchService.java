@@ -16,6 +16,7 @@ import com.intor.watchtime.entity.Watch;
 import com.intor.watchtime.exception.ExternalMediaException;
 import com.intor.watchtime.exception.InvalidRequestException;
 import com.intor.watchtime.exception.ResourceNotFoundException;
+import com.intor.watchtime.exception.WatchLimitExceededException;
 import com.intor.watchtime.mapper.MediaMapper;
 import com.intor.watchtime.mapper.WatchMapper;
 import com.intor.watchtime.repository.EpisodeRepository;
@@ -31,8 +32,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -51,6 +54,8 @@ public class WatchService {
     private final WatchMapper watchMapper;
     private final MediaMapper mediaMapper;
 
+    static final long MAX_WATCHES_PER_ITEM = 20;
+
     @Value("${media.provider}")
     private Provider provider;
 
@@ -62,6 +67,7 @@ public class WatchService {
         Episode episode = request.isMovie()
                 ? null
                 : resolveOrCreateEpisode(media, request.seasonNumber(), request.episodeNumber());
+        verifyWatchLimitNotReached(user, media, episode);
         Watch watch = watchMapper.toEntity(request, user, media, episode);
         return watchMapper.toResponse(watchRepository.save(watch));
     }
@@ -78,6 +84,8 @@ public class WatchService {
                 .findAllByMediaAndSeasonNumber(media, request.seasonNumber())
                 .stream()
                 .collect(Collectors.toMap(Episode::getEpisodeNumber, Function.identity()));
+
+        verifySeasonWatchLimitNotReached(user, existingByNumber.values());
 
         List<Episode> toCreate = season.episodes().stream()
                 .filter(e -> !existingByNumber.containsKey(e.episodeNumber()))
@@ -202,5 +210,32 @@ public class WatchService {
         }
 
         return watchRepository.findEpisodeLatestWatch(mediaId, seasonNumber, episodeNumber, userId).orElse(null);
+    }
+
+
+    private void verifySeasonWatchLimitNotReached(User user, Collection<Episode> episodes) {
+        if (episodes.isEmpty()) {
+            return;
+        }
+
+        Set<UUID> episodeIds = episodes.stream().map(Episode::getId).collect(Collectors.toSet());
+        Set<UUID> atLimit = watchRepository.findEpisodeIdsAtWatchLimit(episodeIds, user.getId(), MAX_WATCHES_PER_ITEM);
+
+        if (!atLimit.isEmpty()) {
+            throw new WatchLimitExceededException(
+                    "%d episode(s) of this season already have %d watches, which is the maximum"
+                            .formatted(atLimit.size(), MAX_WATCHES_PER_ITEM));
+        }
+    }
+
+    private void verifyWatchLimitNotReached(User user, Media media, Episode episode) {
+        long current = episode == null
+                ? watchRepository.countByUserIdAndMediaIdAndEpisodeIsNull(user.getId(), media.getId())
+                : watchRepository.countByUserIdAndEpisodeId(user.getId(), episode.getId());
+
+        if (current >= MAX_WATCHES_PER_ITEM) {
+            throw new WatchLimitExceededException(
+                    "Already logged %d watches of this item, which is the maximum".formatted(MAX_WATCHES_PER_ITEM));
+        }
     }
 }
