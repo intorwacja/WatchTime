@@ -3,8 +3,11 @@ package com.intor.watchtime.repository;
 import com.intor.watchtime.dto.response.media.SeriesWatchInfo;
 import com.intor.watchtime.dto.response.WatchedViewResponse;
 import com.intor.watchtime.dto.response.media.MovieWatchInfo;
+import com.intor.watchtime.repository.projection.DailyMinutesProjection;
 import com.intor.watchtime.repository.projection.EpisodeWatchInfoProjection;
 import com.intor.watchtime.repository.projection.SeasonWatchInfoProjection;
+import com.intor.watchtime.repository.projection.UserStatsProjection;
+import com.intor.watchtime.repository.projection.UserStreakProjection;
 import com.intor.watchtime.entity.Provider;
 import com.intor.watchtime.entity.Watch;
 import org.springframework.data.domain.Page;
@@ -29,6 +32,69 @@ public interface WatchRepository extends JpaRepository<Watch, UUID> {
     long countByUserIdAndMediaIdAndEpisodeIsNull(UUID userId, UUID mediaId);
 
     long countByUserIdAndEpisodeId(UUID userId, UUID episodeId);
+
+    @Query("""
+    SELECT new com.intor.watchtime.repository.projection.UserStatsProjection(
+        coalesce(SUM(CASE WHEN e IS NULL THEN m.runtimeMinutes ELSE e.runtimeMinutes END), 0),
+        COUNT(CASE WHEN e IS NULL THEN 1 END),
+        COUNT(CASE WHEN e IS NOT NULL THEN 1 END),
+        COUNT(DISTINCT m.id),
+        MIN(w.watchedAt),
+        COUNT(CASE WHEN e IS NULL AND w.watchedAt >= :monthStart THEN 1 END),
+        coalesce(SUM(CASE WHEN w.watchedAt >= :weekStart
+                          THEN (CASE WHEN e IS NULL THEN m.runtimeMinutes ELSE e.runtimeMinutes END)
+                     END), 0),
+        coalesce(SUM(CASE WHEN w.watchedAt >= :lastWeekStart AND w.watchedAt < :weekStart
+                          THEN (CASE WHEN e IS NULL THEN m.runtimeMinutes ELSE e.runtimeMinutes END)
+                     END), 0),
+        coalesce(SUM(CASE WHEN w.watchedAt >= :thirtyDaysStart
+                          THEN (CASE WHEN e IS NULL THEN m.runtimeMinutes ELSE e.runtimeMinutes END)
+                     END), 0)
+    )
+    FROM Watch w
+    JOIN w.media m
+    LEFT JOIN w.episode e
+    WHERE w.user.id = :userId
+""")
+    UserStatsProjection findUserStats(@Param("userId") UUID userId,
+                                      @Param("monthStart") Instant monthStart,
+                                      @Param("weekStart") Instant weekStart,
+                                      @Param("lastWeekStart") Instant lastWeekStart,
+                                      @Param("thirtyDaysStart") Instant thirtyDaysStart);
+
+    @Query(nativeQuery = true, value = """
+      WITH days AS (
+          SELECT DISTINCT (w.watched_at AT TIME ZONE 'UTC' AT TIME ZONE :zone)::date AS d
+          FROM watches w
+          WHERE w.user_id = :userId
+      ),
+      marked AS (
+          SELECT d, lead(d) OVER (ORDER BY d DESC) AS next_older
+          FROM days
+      )
+      SELECT (SELECT max(d) FROM days) AS "lastWatchedDay",
+             max(d) AS "streakStart"
+      FROM marked
+      WHERE next_older IS NULL OR next_older < d - 1
+      """)
+    Optional<UserStreakProjection> findStreakBounds(@Param("userId") UUID userId,
+                                                    @Param("zone") String zone);
+
+    @Query(nativeQuery = true, value = """
+      SELECT (w.watched_at AT TIME ZONE 'UTC' AT TIME ZONE :zone)::date AS "day",
+             coalesce(SUM(CASE WHEN w.episode_id IS NULL
+                               THEN m.runtime_minutes ELSE e.runtime_minutes END), 0) AS "minutes"
+      FROM watches w
+      JOIN media m ON m.id = w.media_id
+      LEFT JOIN episodes e ON e.id = w.episode_id
+      WHERE w.user_id = :userId
+        AND w.watched_at >= :from
+      GROUP BY "day"
+      ORDER BY "day"
+      """)
+    List<DailyMinutesProjection> findDailyMinutes(@Param("userId") UUID userId,
+                                                  @Param("zone") String zone,
+                                                  @Param("from") Instant from);
 
     @Query("""
       SELECT DISTINCT w.episode.id FROM Watch w
