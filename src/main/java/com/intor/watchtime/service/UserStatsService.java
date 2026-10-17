@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.DateTimeException;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -18,6 +17,7 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -27,19 +27,18 @@ import java.util.stream.IntStream;
 @Transactional(readOnly = true)
 public class UserStatsService {
 
+    private static final Set<String> REGION_ZONE_IDS = ZoneId.getAvailableZoneIds();
     private static final int MAX_DAYS = 90;
 
     private final WatchRepository watchRepository;
     private final CurrentUserService currentUserService;
 
     public UserStatsResponse getStatsForCurrentUser(String zone, int days) {
-        ZoneId zoneId;
-
-        try {
-            zoneId = ZoneId.of(zone);
-        } catch (DateTimeException e) {
-            throw new InvalidRequestException("Unknown time zone: " + zone, e);
+        if (!REGION_ZONE_IDS.contains(zone)) {
+            throw new InvalidRequestException("Unknown time zone: " + zone + ". Use a region id like Europe/Warsaw");
         }
+
+        ZoneId zoneId = ZoneId.of(zone);
 
         if (days < 0 || days > MAX_DAYS) {
             throw new InvalidRequestException("days must be between 0 and " + MAX_DAYS);
