@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.intor</groupId>
     <artifactId>WatchTime</artifactId>
-    <version>1.0.0-beta.2</version>
+    <version>1.0.0-beta.3</version>
     <name>WatchTime</name>
     <description>WatchTime</description>
     <url/>
