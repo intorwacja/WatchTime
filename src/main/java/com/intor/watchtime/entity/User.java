@@ -35,6 +35,8 @@ public class User {
 
     private String pictureUrl;
 
+    private int lastSeenChangelogId;
+
     @Column(updatable = false)
     private Instant createdAt;
 

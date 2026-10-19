@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final ChangelogService changelogService;
 
     @Transactional
     public void provision(OidcUser oidcUser) {
@@ -23,6 +24,7 @@ public class UserService {
                 .orElseGet(() -> User.builder()
                         .issuer(issuer)
                         .subject(subject)
+                        .lastSeenChangelogId(changelogService.getLatestId() - 1)
                         .build());
 
         user.setEmail(oidcUser.getEmail());

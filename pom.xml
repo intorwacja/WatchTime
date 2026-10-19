@@ -5,12 +5,12 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.0</version>
+        <version>4.1.1</version>
         <relativePath/>
     </parent>
     <groupId>com.intor</groupId>
     <artifactId>WatchTime</artifactId>
-    <version>1.0.0-beta.1</version>
+    <version>1.0.0-beta.3</version>
     <name>WatchTime</name>
     <description>WatchTime</description>
     <url/>
@@ -28,6 +28,9 @@
     </scm>
     <properties>
         <java.version>25</java.version>
+        <tomcat.version>11.0.27</tomcat.version>
+        <jackson-bom.version>3.1.7</jackson-bom.version>
+        <postgresql.version>42.7.14</postgresql.version>
     </properties>
     <dependencies>
         <dependency>
@@ -38,7 +41,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
