@@ -13,6 +13,8 @@ Watchtime lets you search films and series, log what you watched (including rewa
 - Search films and TV series (TMDB)
 - Log watches
 - Browse watch history
+- Personal statistics: total watch time, weekly and monthly summaries, daily activity, watching streak
+- "What's new" changelog, shown once per release
 - Login via Auth0
 
 ## Tech stack
@@ -53,6 +55,7 @@ A few choices I made deliberately, and why:
 - **Watches as an event log.** Every watch is a new row instead of a find-and-increment counter. Rewatches come for free (`COUNT(*)`), and history is never lost.
 - **Aggregations in SQL, not in memory.** Statistics are computed by the database, which keeps the app lean and the queries explainable.
 - **Sessions outside the process.** Spring Session keeps them in Redis, so a redeploy doesn't sign everyone out and a second instance would see the same sessions.
+- **Changelog in the repository, not in the database.** Release notes live in `changelog.json` and ship with the build that introduces them. Each entry has an incrementing id, and every user stores only the id of the last entry they've seen, so someone who skipped several releases gets all of the missed entries at once.
 - **Own VPS over managed cloud.** The whole system is hosted on one VPS. The equivalent on AWS would mean RDS, ElastiCache, a load balancer, and a container runtime. More moving parts to wire together and pay for every month. Running it myself keeps every layer configurable.
 
 ## Running locally
@@ -104,18 +107,21 @@ All properties live in `application.properties`, with per-profile overrides in `
 ./mvnw test
 ```
 
-22 unit tests covering the parts with real branching: recording a season when some episodes are already stored, the guards around missing or unknown episodes, which error a failed delete reports, resolving the signed-in account, and the TMDB response mapping.
+34 unit tests covering the parts with real branching: recording a season when some episodes are already stored, the guards around missing or unknown episodes, which error a failed delete reports, resolving the signed-in account, what an anonymous visitor sees, the TMDB response mapping, and which changelog entries a user hasn't seen yet.
 
 ## Deployment
 
 Production runs on a single VPS with: cloudflared → Caddy → the React container and Spring Boot → PostgreSQL and Redis.
 
-Images are built locally and pushed to GHCR; the server only pulls.
+Images are built locally and pushed to GHCR; the server only pulls. Flyway applies pending migrations when the new backend starts.
+
+A release that users should hear about adds an entry with the next id to `src/main/resources/changelog.json`.
 
 ## Roadmap
 
 - [ ] Favourites, and a watchlist for titles you plan to watch
-- [ ] User statistics: time watched, most-watched genres, a yearly recap
+- [x] User statistics: time watched, daily activity, watching streak
+- [ ] More statistics: most-watched genres, a yearly recap
 - [ ] Ratings
 - [ ] Import history from other tracking applications, e.g. TV Time
 - [ ] Automated synchronization with the media provider
