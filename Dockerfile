@@ -14,6 +14,9 @@ FROM eclipse-temurin:25-jre
 
 LABEL org.opencontainers.image.source=https://github.com/intorwacja/WatchTime
 
+RUN --mount=type=bind,source=emudhra-blocked.certs,target=/tmp/emudhra-blocked.certs \
+    cat /tmp/emudhra-blocked.certs >> "$JAVA_HOME/lib/security/blocked.certs"
+
 RUN groupadd --system watchtime && useradd --system --gid watchtime watchtime
 
 WORKDIR /app
