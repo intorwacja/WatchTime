@@ -56,7 +56,7 @@ services:
     restart: unless-stopped
 
   cloudflared:
-    image: cloudflare/cloudflared:2026.9.3
+    image: cloudflare/cloudflared:2026.10.6
     container_name: watchtime-cloudflared
     command: tunnel --no-autoupdate run
     environment:
